@@ -56,16 +56,16 @@ userSchema.pre('save', function(next){
 
 userSchema.methods.비번체크 = function(plainPassword,cb){
     bcrypt.compare(plainPassword, this.password, function(err,비번맞음){
-        if(err) return cb(err),
+        if(err) return cb(err);
         cb(null,비번맞음)
     })
 }
 
 userSchema.methods.generateToken = function(cb){
 
-    let user =this;
+    var user =this;
     // jsonwebtoken을 이용해서 token을 생성하기
-    let token = jwt.sign(user._id.toHexString(), 'secretToken')
+    var token = jwt.sign(user._id.toHexString(), 'secretToken')
     user.token = token
     user.save(function(err,user){
         if(err) return cb(err)
@@ -73,6 +73,20 @@ userSchema.methods.generateToken = function(cb){
     })
 
     
+}
+
+userSchema.statics.findByToken = function(token,cb){
+    var user = this;
+    // 토큰을 decode 한다.
+    jwt.verify(token,'secretToken',function(err,decoded){
+        // 유저 아이디를 이용해서 유저를 찾은 다음에 
+        // client에서 가져온 token과 db에 보관된 token이 일치하는지 확인
+
+        user.findOne({"_id":decoded,"token": token}, function(err,user){
+            if(err) return cb(err);
+            cb(null,user)
+        })
+    })
 }
 const User = mongoose.model('User', userSchema)
 
